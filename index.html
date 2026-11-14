@@ -202,8 +202,10 @@ button.go svg{width:16px; height:16px}
 // ---------- dados de apoio ----------
 var FREE = new Set(["gmail.com","googlemail.com","hotmail.com","hotmail.com.br","outlook.com","outlook.com.br","live.com","msn.com","yahoo.com","yahoo.com.br","ymail.com","icloud.com","me.com","mac.com","proton.me","protonmail.com","pm.me","gmx.com","gmx.net","aol.com","zoho.com","bol.com.br","uol.com.br","terra.com.br","ig.com.br","globo.com","yandex.com"]);
 var DISPOSABLE = (function(){
-  try { return new Set((window.DISPOSABLE_LIST||'').split('\n').map(function(s){return s.trim();}).filter(Boolean)); }
-  catch(e){ return new Set(); }
+  var extra = ["tempmail.com","tempmail.net","tempmail.io","temp-mail.io","tempmailo.com","tempmail.plus","mailtemp.net","20minutemail.com","burnermail.io","emailfake.com","email-fake.com","fakemailgenerator.com","tmailor.com","mail-temp.com"];
+  try { var base = (window.DISPOSABLE_LIST||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+    return new Set(base.concat(extra)); }
+  catch(e){ return new Set(extra); }
 })();
 var ROLE = new Set(["info","contato","contact","admin","administrador","suporte","support","sac","vendas","sales","noreply","no-reply","nao-responda","naoresponda","atendimento","financeiro","comercial","marketing","postmaster","webmaster","abuse","root","hostmaster","ouvidoria","faleconosco","cadastro"]);
 
