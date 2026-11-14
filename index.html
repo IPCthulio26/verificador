@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificador de E-mail e Telefone</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ferramenta escura com duas abas (e-mail / telefone), entrada única e painel de resultados em linhas rotuladas */
+:root{
+  --bg:#0c0f14; --panel:#141922; --panel-2:#1b212c; --line:#283040;
+  --fg:#e8edf4; --muted:#9aa7b8; --faint:#6b7889;
+  --accent:#36d6c3; --accent-ink:#06201d;
+  --ok:#3ecf8e; --warn:#f2b545; --bad:#f2676b; --neutral:#7d8aa0;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --disp:'Space Grotesk','Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(54,214,195,.10), transparent 60%),
+    radial-gradient(700px 500px at -5% 0%, rgba(80,120,255,.06), transparent 55%),
+    var(--bg);
+  color:var(--fg); font-family:var(--sans); line-height:1.5;
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+.wrap{max-width:720px; margin:0 auto; padding:40px 20px 56px}
+.brand{display:flex; align-items:center; gap:11px; margin-bottom:6px}
+.logo{width:34px; height:34px; border-radius:9px; display:grid; place-items:center;
+  background:linear-gradient(145deg,var(--accent),#2a9d8f); color:var(--accent-ink); flex:0 0 auto}
+.logo svg{width:20px; height:20px; display:block}
+.brand h1{font-family:var(--disp); font-size:20px; font-weight:700; margin:0; letter-spacing:-.01em}
+.brand .tag{font-size:12px; color:var(--faint); margin-top:1px}
+.lede{color:var(--muted); font-size:14.5px; margin:10px 0 26px; max-width:60ch}
+.tabs{display:flex; gap:6px; background:var(--panel); border:1px solid var(--line);
+  border-radius:12px; padding:5px; margin-bottom:18px}
+.tab{flex:1; border:0; background:transparent; color:var(--muted); font-family:var(--sans);
+  font-size:14px; font-weight:600; padding:10px 12px; border-radius:8px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px; transition:.15s}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{background:var(--accent); color:var(--accent-ink)}
+.tab svg{width:16px; height:16px}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px}
+.field label{display:block; font-size:12px; font-weight:600; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--faint); margin-bottom:8px}
+.row-in{display:flex; gap:10px; flex-wrap:wrap}
+.row-in .grow{flex:1 1 240px; min-width:0}
+input,select{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--fg);
+  font-family:var(--sans); font-size:15px; padding:13px 14px; border-radius:11px; outline:none; transition:.15s}
+input::placeholder{color:var(--faint)}
+input:focus,select:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(54,214,195,.16)}
+select{flex:0 0 auto; width:auto; min-width:150px}
+button.go{flex:0 0 auto; background:var(--accent); color:var(--accent-ink); border:0; cursor:pointer;
+  font-family:var(--sans); font-weight:700; font-size:15px; padding:13px 20px; border-radius:11px;
+  display:inline-flex; align-items:center; gap:8px; transition:.15s}
+button.go:hover{filter:brightness(1.07)}
+button.go:disabled{opacity:.55; cursor:default; filter:none}
+button.go svg{width:16px; height:16px}
+.hint{font-size:12.5px; color:var(--faint); margin-top:10px}
+.results{margin-top:18px; display:flex; flex-direction:column; gap:10px}
+.summary{display:flex; align-items:center; gap:12px; padding:15px 16px; border-radius:13px;
+  border:1px solid var(--line); background:var(--panel-2)}
+.summary .big{font-family:var(--disp); font-size:16px; font-weight:600}
+.summary .sub{font-size:13px; color:var(--muted)}
+.badge{margin-left:auto; font-size:12px; font-weight:700; padding:5px 11px; border-radius:999px;
+  letter-spacing:.02em; white-space:nowrap}
+.b-ok{background:rgba(62,207,142,.15); color:var(--ok)}
+.b-warn{background:rgba(242,181,69,.15); color:var(--warn)}
+.b-bad{background:rgba(242,103,107,.16); color:var(--bad)}
+.b-neutral{background:rgba(125,138,160,.16); color:var(--neutral)}
+.lines{border:1px solid var(--line); border-radius:13px; overflow:hidden; background:var(--panel-2)}
+.line{display:flex; align-items:flex-start; gap:12px; padding:13px 16px; border-top:1px solid var(--line)}
+.line:first-child{border-top:0}
+.dot{width:9px; height:9px; border-radius:50%; margin-top:6px; flex:0 0 auto; background:var(--neutral)}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)}
+.dot.bad{background:var(--bad)} .dot.neutral{background:var(--neutral)}
+.line .k{font-size:13px; color:var(--muted); flex:0 0 150px}
+.line .v{font-size:14px; color:var(--fg); flex:1 1 auto; min-width:0; word-break:break-word}
+.line .v .mono{font-family:var(--mono); font-size:13.5px; color:var(--fg)}
+.line .v small{display:block; color:var(--faint); font-size:12.5px; margin-top:2px}
+.grav{display:flex; align-items:center; gap:12px}
+.grav img{width:44px; height:44px; border-radius:9px; border:1px solid var(--line)}
+.spin{display:inline-block; width:15px; height:15px; border:2px solid rgba(255,255,255,.25);
+  border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err{color:var(--bad); font-size:14px; padding:14px 16px; border:1px solid rgba(242,103,107,.3);
+  background:rgba(242,103,107,.07); border-radius:13px}
+.foot{margin-top:26px; font-size:12px; color:var(--faint); line-height:1.6; border-top:1px solid var(--line); padding-top:16px}
+.foot b{color:var(--muted); font-weight:600}
+.exmark{font-size:11px; font-weight:700; color:var(--warn); letter-spacing:.06em; text-transform:uppercase; margin-bottom:9px}
+@media (max-width:460px){
+  select{min-width:0; width:100%}
+  .row-in .grow,button.go{flex:1 1 100%}
+  .line{flex-direction:column; gap:4px}
+  .line .k{flex-basis:auto}
+  .line .dot{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+    </span>
+    <div>
+      <h1>Verificador</h1>
+      <div class="tag">E-mail e telefone · OSINT</div>
+    </div>
+  </div>
+  <p class="lede">Confira um e-mail ou telefone a partir de sinais técnicos públicos: se o endereço realmente recebe mensagem, se o número é válido e de onde ele é. Nada é enviado ao titular — a consulta é só sobre o dado que você já tem.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tab-email" role="tab" aria-selected="true" aria-controls="panel-email">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      E-mail
+    </button>
+    <button class="tab" id="tab-fone" role="tab" aria-selected="false" aria-controls="panel-fone">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L20 13l2 4v4a2 2 0 0 1-2 2A17 17 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>
+      Telefone
+    </button>
+  </div>
+
+  <!-- E-MAIL -->
+  <section id="panel-email" role="tabpanel" aria-labelledby="tab-email">
+    <div class="card">
+      <form class="field" id="form-email" autocomplete="off">
+        <label for="in-email">Endereço de e-mail</label>
+        <div class="row-in">
+          <span class="grow"><input id="in-email" type="text" inputmode="email" placeholder="nome@dominio.com" value="exemplo@gmail.com"></span>
+          <button class="go" type="submit" id="btn-email">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            Verificar
+          </button>
+        </div>
+        <div class="hint">Checa formato, se o domínio existe e recebe e-mail (registro MX), se é provedor gratuito, descartável ou endereço institucional, e se há foto pública no Gravatar.</div>
+      </form>
+      <div class="results" id="res-email" hidden></div>
+    </div>
+  </section>
+
+  <!-- TELEFONE -->
+  <section id="panel-fone" role="tabpanel" aria-labelledby="tab-fone" hidden>
+    <div class="card">
+      <form class="field" id="form-fone" autocomplete="off">
+        <label for="in-fone">Número de telefone</label>
+        <div class="row-in">
+          <select id="sel-pais" aria-label="País">
+            <option value="BR" selected>🇧🇷 Brasil (+55)</option>
+            <option value="PT">🇵🇹 Portugal (+351)</option>
+            <option value="US">🇺🇸 EUA/Canadá (+1)</option>
+            <option value="AR">🇦🇷 Argentina (+54)</option>
+            <option value="PY">🇵🇾 Paraguai (+595)</option>
+            <option value="UY">🇺🇾 Uruguai (+598)</option>
+            <option value="CL">🇨🇱 Chile (+56)</option>
+            <option value="CO">🇨🇴 Colômbia (+57)</option>
+            <option value="MX">🇲🇽 México (+52)</option>
+            <option value="ES">🇪🇸 Espanha (+34)</option>
+            <option value="__">Outro — digitar com +</option>
+          </select>
+          <span class="grow"><input id="in-fone" type="text" inputmode="tel" placeholder="(11) 98888-7823" value="11988887823"></span>
+          <button class="go" type="submit" id="btn-fone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+            Verificar
+          </button>
+        </div>
+        <div class="hint">Diz se o número é válido e possível, o país de origem, o tipo de linha (celular ou fixo) e o número nos formatos nacional e internacional (E.164).</div>
+      </form>
+      <div class="results" id="res-fone" hidden></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <b>Uso responsável.</b> Esta ferramenta lê apenas sinais técnicos e públicos (DNS do domínio, foto pública de Gravatar, regras de numeração telefônica). Ela não acessa contas, não notifica o titular e não coleta dado privado. Use dentro da sua base legal — para obter dados cadastrais ligados a um número ou IP, o caminho é o ofício ao provedor.
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/libphonenumber-js/1.11.4/libphonenumber-js.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+// ---------- dados de apoio ----------
+var FREE = new Set(["gmail.com","googlemail.com","hotmail.com","hotmail.com.br","outlook.com","outlook.com.br","live.com","msn.com","yahoo.com","yahoo.com.br","ymail.com","icloud.com","me.com","mac.com","proton.me","protonmail.com","pm.me","gmx.com","gmx.net","aol.com","zoho.com","bol.com.br","uol.com.br","terra.com.br","ig.com.br","globo.com","yandex.com"]);
+var DISPOSABLE = new Set(["mailinator.com","guerrillamail.com","guerrillamail.info","guerrillamailblock.com","sharklasers.com","grr.la","10minutemail.com","tempmail.com","temp-mail.org","tempmail.net","yopmail.com","throwawaymail.com","getnada.com","nada.email","trashmail.com","maildrop.cc","fakeinbox.com","fakemail.net","mailnesia.com","mintemail.com","mohmal.com","tempr.email","dispostable.com","emailondeck.com","moakt.com","spamgourmet.com","mailcatch.com","inboxkitten.com","1secmail.com","tmpmail.org","mailtemp.net","dropmail.me","20minutemail.com","burnermail.io"]);
+var ROLE = new Set(["info","contato","contact","admin","administrador","suporte","support","sac","vendas","sales","noreply","no-reply","nao-responda","naoresponda","atendimento","financeiro","comercial","marketing","postmaster","webmaster","abuse","root","hostmaster","ouvidoria","faleconosco","cadastro"]);
+
+var EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+
+var regionName;
+try { regionName = new Intl.DisplayNames(['pt-BR'],{type:'region'}); } catch(e){ regionName = null; }
+
+// ---------- helpers de UI ----------
+function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; return e; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+function summary(box, cls, big, sub, badgeCls, badgeText){
+  var s = el('div','summary');
+  s.appendChild(el('div',null,'<div class="big">'+esc(big)+'</div><div class="sub">'+esc(sub)+'</div>'));
+  var b = el('span','badge '+badgeCls, esc(badgeText));
+  s.appendChild(b);
+  box.appendChild(s);
+}
+function lines(box){ var l=el('div','lines'); box.appendChild(l); return l; }
+function addLine(l, dot, k, vHtml){
+  var row = el('div','line');
+  row.appendChild(el('span','dot '+dot));
+  row.appendChild(el('span','k', esc(k)));
+  row.appendChild(el('span','v', vHtml));
+  l.appendChild(row);
+  return row;
+}
+function errBox(box, msg){ box.appendChild(el('div','err', esc(msg))); }
+
+// ---------- DNS over HTTPS ----------
+function dns(name, type){
+  return fetch('https://dns.google/resolve?name='+encodeURIComponent(name)+'&type='+type)
+    .then(function(r){ if(!r.ok) throw new Error('DNS '+r.status); return r.json(); });
+}
+
+// ---------- SHA-256 p/ Gravatar ----------
+function sha256hex(str){
+  var buf = new TextEncoder().encode(str);
+  return crypto.subtle.digest('SHA-256', buf).then(function(h){
+    return Array.prototype.map.call(new Uint8Array(h), function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+  });
+}
+
+// ================= E-MAIL =================
+function verificarEmail(raw){
+  var box = document.getElementById('res-email');
+  box.hidden = false; box.innerHTML = '';
+  var email = raw.trim().toLowerCase();
+
+  if(!email){ errBox(box,'Digite um e-mail.'); return; }
+  if(!EMAIL_RE.test(email) || email.length>254){
+    summary(box,'bad','Formato inválido','Esse texto não é um endereço de e-mail válido.','b-bad','INVÁLIDO');
+    return;
+  }
+  var at = email.lastIndexOf('@');
+  var local = email.slice(0,at);
+  var domain = email.slice(at+1);
+
+  var isFree = FREE.has(domain);
+  var isDisp = DISPOSABLE.has(domain);
+  var isRole = ROLE.has(local);
+
+  // placeholder enquanto consulta DNS
+  summary(box,'neutral','Consultando domínio…','<span class="spin"></span>','b-neutral','AGUARDE');
+
+  dns(domain,'MX').then(function(mx){
+    var hasMX = mx.Status===0 && Array.isArray(mx.Answer) && mx.Answer.some(function(a){return a.type===15;});
+    var nxdomain = mx.Status===3;
+    var mxHosts = hasMX ? mx.Answer.filter(function(a){return a.type===15;})
+        .map(function(a){ var p=a.data.trim().split(/\s+/); return (p[1]||p[0]).replace(/\.$/,''); }) : [];
+
+    function finish(hasA){
+      box.innerHTML = '';
+      var deliver = hasMX || hasA;
+      var cls, badgeCls, badge, big, sub;
+      if(nxdomain || !deliver){
+        cls='bad'; badgeCls='b-bad'; badge='NÃO RECEBE';
+        big = nxdomain ? 'Domínio não existe' : 'Domínio não recebe e-mail';
+        sub = nxdomain ? 'O domínio '+domain+' não está registrado no DNS.' : 'Sem servidor de e-mail configurado — mensagens não são entregues.';
+      } else if(isDisp){
+        cls='warn'; badgeCls='b-warn'; badge='DESCARTÁVEL';
+        big='E-mail temporário'; sub='Domínio de e-mail descartável — costuma sumir em minutos.';
+      } else {
+        cls='ok'; badgeCls='b-ok'; badge='RECEBE E-MAIL';
+        big='Domínio válido e ativo'; sub='O domínio existe e está pronto para receber mensagens.';
+      }
+      summary(box,cls,big,sub,badgeCls,badge);
+
+      var l = lines(box);
+      addLine(l,'ok','Formato','<span class="mono">'+esc(email)+'</span>');
+      addLine(l,'ok','Domínio','<span class="mono">'+esc(domain)+'</span>');
+      if(hasMX){
+        addLine(l,'ok','Recebe e-mail','Sim — registro MX encontrado<small>'+esc(mxHosts.slice(0,3).join(' · '))+(mxHosts.length>3?' …':'')+'</small>');
+      } else if(hasA){
+        addLine(l,'warn','Recebe e-mail','Provavelmente — sem MX, mas o domínio tem servidor (registro A)');
+      } else {
+        addLine(l,'bad','Recebe e-mail','Não — nenhum servidor de e-mail no domínio');
+      }
+      addLine(l, isDisp?'bad':'ok','Tipo de domínio',
+        isDisp ? 'Descartável / temporário' : (isFree ? 'Provedor gratuito (webmail público)' : 'Próprio / corporativo'));
+      addLine(l, isRole?'warn':'neutral','Caixa',
+        isRole ? 'Institucional (setor, não uma pessoa): '+esc(local) : 'Pessoal / nominal');
+
+      // Gravatar
+      var gRow = addLine(l,'neutral','Gravatar','<span class="spin"></span> procurando foto pública…');
+      sha256hex(email).then(function(hash){
+        var img = new Image();
+        var url = 'https://www.gravatar.com/avatar/'+hash+'?d=404&s=96';
+        img.onload = function(){
+          gRow.querySelector('.dot').className='dot ok';
+          gRow.querySelector('.v').innerHTML='';
+          var g = el('div','grav');
+          var im = el('img'); im.src='https://www.gravatar.com/avatar/'+hash+'?d=404&s=120'; im.alt='Foto Gravatar';
+          g.appendChild(im);
+          g.appendChild(el('div',null,'Tem foto pública no Gravatar<small>Endereço usado em cadastro com avatar público — <a href="https://gravatar.com/'+hash+'" target="_blank" rel="noopener" style="color:var(--accent)">ver perfil</a></small>'));
+          gRow.querySelector('.v').appendChild(g);
+        };
+        img.onerror = function(){
+          gRow.querySelector('.dot').className='dot neutral';
+          gRow.querySelector('.v').innerHTML='Sem foto pública no Gravatar';
+        };
+        img.src = url;
+      }).catch(function(){
+        gRow.querySelector('.v').innerHTML='Não foi possível checar o Gravatar';
+      });
+    }
+
+    if(hasMX || nxdomain){ finish(false); }
+    else {
+      dns(domain,'A').then(function(a){
+        finish(a.Status===0 && Array.isArray(a.Answer) && a.Answer.length>0);
+      }).catch(function(){ finish(false); });
+    }
+  }).catch(function(e){
+    box.innerHTML='';
+    errBox(box,'Não consegui consultar o DNS agora. Verifique sua conexão e tente de novo. ('+e.message+')');
+  });
+}
+
+// ================= TELEFONE =================
+var TIPOS = {
+  MOBILE:'Celular (móvel)', FIXED_LINE:'Fixo', 'FIXED_LINE_OR_MOBILE':'Fixo ou móvel',
+  VOIP:'VoIP (internet)', TOLL_FREE:'Gratuito (0800)', PREMIUM_RATE:'Tarifa premium',
+  PERSONAL_NUMBER:'Número pessoal', PAGER:'Pager', UAN:'Rede corporativa', SHARED_COST:'Custo compartilhado'
+};
+
+function tipoBR(pn){
+  var nn = String(pn.nationalNumber||'');
+  if(nn.length<10) return null;
+  var sub = nn.slice(2); // remove DDD
+  if(sub.length===9 && sub[0]==='9') return 'MOBILE';
+  if(sub.length===8 && '2345'.indexOf(sub[0])>=0) return 'FIXED_LINE';
+  return null;
+}
+
+function verificarFone(raw, pais){
+  var box = document.getElementById('res-fone');
+  box.hidden=false; box.innerHTML='';
+  var L = window.libphonenumber;
+  var input = raw.trim();
+  if(!input){ errBox(box,'Digite um número.'); return; }
+  if(!L || !L.parsePhoneNumber){ errBox(box,'Biblioteca de telefone não carregou. Recarregue a página online.'); return; }
+
+  var pn;
+  try{
+    if(pais==='__' || input.charAt(0)==='+'){ pn = L.parsePhoneNumber(input); }
+    else { pn = L.parsePhoneNumber(input, pais); }
+  }catch(e){ pn = null; }
+
+  if(!pn){
+    summary(box,'bad','Não reconhecido','Não consegui interpretar esse número. Confira os dígitos ou escolha o país certo.','b-bad','INVÁLIDO');
+    return;
+  }
+
+  var valido = pn.isValid();
+  var possivel = pn.isPossible();
+  var cls,badgeCls,badge,big,sub;
+  if(valido){ cls='ok'; badgeCls='b-ok'; badge='VÁLIDO'; big='Número válido'; sub='Segue as regras de numeração do país.'; }
+  else if(possivel){ cls='warn'; badgeCls='b-warn'; badge='INCERTO'; big='Formato possível, mas não confirmado'; sub='O tamanho bate, mas não corresponde a uma faixa ativa conhecida.'; }
+  else { cls='bad'; badgeCls='b-bad'; badge='INVÁLIDO'; big='Número inválido'; sub='Não corresponde a um número real nesse país.'; }
+  summary(box,cls,big,sub,badgeCls,badge);
+
+  var tipo = null;
+  try{ tipo = pn.getType ? pn.getType() : null; }catch(e){}
+  if(!tipo && pn.country==='BR') tipo = tipoBR(pn);
+
+  var pais2 = pn.country || pais;
+  var nomePais = (regionName && pais2) ? regionName.of(pais2) : pais2;
+
+  var l = lines(box);
+  addLine(l, valido?'ok':(possivel?'warn':'bad'), 'Situação', valido?'Número válido e ativo':(possivel?'Possível, não confirmado':'Inválido'));
+  addLine(l,'ok','País', esc((nomePais||'—')) + (pais2?' ('+pais2+')':''));
+  addLine(l,'neutral','Código do país', '<span class="mono">+'+esc(pn.countryCallingCode)+'</span>');
+  addLine(l, tipo?'ok':'neutral', 'Tipo de linha', tipo ? esc(TIPOS[tipo]||tipo) : 'Não disponível para este país');
+  addLine(l,'ok','Formato internacional', '<span class="mono">'+esc(pn.formatInternational())+'</span>');
+  addLine(l,'ok','Formato nacional', '<span class="mono">'+esc(pn.formatNational())+'</span>');
+  addLine(l,'ok','E.164 (padrão)', '<span class="mono">'+esc(pn.number)+'</span><small>Formato para registrar em sistemas e ofícios</small>');
+}
+
+// ---------- abas ----------
+function selTab(which){
+  var isEmail = which==='email';
+  document.getElementById('tab-email').setAttribute('aria-selected', isEmail);
+  document.getElementById('tab-fone').setAttribute('aria-selected', !isEmail);
+  document.getElementById('panel-email').hidden = !isEmail;
+  document.getElementById('panel-fone').hidden = isEmail;
+}
+document.getElementById('tab-email').addEventListener('click',function(){selTab('email');});
+document.getElementById('tab-fone').addEventListener('click',function(){selTab('fone');});
+
+document.getElementById('form-email').addEventListener('submit',function(e){
+  e.preventDefault(); verificarEmail(document.getElementById('in-email').value);
+});
+document.getElementById('form-fone').addEventListener('submit',function(e){
+  e.preventDefault(); verificarFone(document.getElementById('in-fone').value, document.getElementById('sel-pais').value);
+});
+
+// exemplo inicial para a primeira tela não ficar vazia
+window.addEventListener('load', function(){
+  verificarEmail('exemplo@gmail.com');
+});
+})();
+</script>
+</body>
+</html>
