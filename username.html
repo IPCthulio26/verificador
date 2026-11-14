@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscador de Username</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: mesma identidade do Verificador — busca de username e grade de plataformas por categoria */
+:root{
+  --bg:#0c0f14; --panel:#141922; --panel-2:#1b212c; --line:#283040;
+  --fg:#e8edf4; --muted:#9aa7b8; --faint:#6b7889;
+  --accent:#36d6c3; --accent-ink:#06201d;
+  --ok:#3ecf8e; --warn:#f2b545; --bad:#f2676b; --neutral:#7d8aa0;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  --disp:'Space Grotesk','Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(54,214,195,.10), transparent 60%),
+    radial-gradient(700px 500px at -5% 0%, rgba(80,120,255,.06), transparent 55%),
+    var(--bg);
+  color:var(--fg); font-family:var(--sans); line-height:1.5;
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+.wrap{max-width:860px; margin:0 auto; padding:32px 20px 56px}
+.nav{display:flex; gap:8px; margin-bottom:22px}
+.nav a{font-size:13px; font-weight:600; color:var(--muted); text-decoration:none;
+  padding:8px 14px; border:1px solid var(--line); border-radius:9px; background:var(--panel); transition:.15s}
+.nav a:hover{color:var(--fg); border-color:var(--faint)}
+.nav a.on{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.brand{display:flex; align-items:center; gap:11px; margin-bottom:6px}
+.logo{width:34px; height:34px; border-radius:9px; display:grid; place-items:center;
+  background:linear-gradient(145deg,var(--accent),#2a9d8f); color:var(--accent-ink); flex:0 0 auto}
+.logo svg{width:20px; height:20px; display:block}
+.brand h1{font-family:var(--disp); font-size:20px; font-weight:700; margin:0; letter-spacing:-.01em}
+.brand .tag{font-size:12px; color:var(--faint); margin-top:1px}
+.lede{color:var(--muted); font-size:14.5px; margin:10px 0 22px; max-width:68ch}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px}
+.field label{display:block; font-size:12px; font-weight:600; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--faint); margin-bottom:8px}
+.row-in{display:flex; gap:10px; flex-wrap:wrap}
+.row-in .grow{flex:1 1 240px; min-width:0; position:relative; display:flex; align-items:center}
+.row-in .grow .at{position:absolute; left:14px; color:var(--faint); font-size:15px; pointer-events:none}
+input{width:100%; background:var(--panel-2); border:1px solid var(--line); color:var(--fg);
+  font-family:var(--sans); font-size:15px; padding:13px 14px 13px 30px; border-radius:11px; outline:none; transition:.15s}
+input::placeholder{color:var(--faint)}
+input:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(54,214,195,.16)}
+button.go{flex:0 0 auto; background:var(--accent); color:var(--accent-ink); border:0; cursor:pointer;
+  font-family:var(--sans); font-weight:700; font-size:15px; padding:13px 20px; border-radius:11px;
+  display:inline-flex; align-items:center; gap:8px; transition:.15s}
+button.go:hover{filter:brightness(1.07)}
+button.go svg{width:16px; height:16px}
+.hint{font-size:12.5px; color:var(--faint); margin-top:10px}
+.statusbar{margin-top:16px; font-size:13px; color:var(--muted); display:none; align-items:center; gap:8px; flex-wrap:wrap}
+.statusbar b{color:var(--fg)}
+.pill{font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px}
+.p-ok{background:rgba(62,207,142,.15); color:var(--ok)}
+.p-manual{background:rgba(125,138,160,.16); color:var(--neutral)}
+.cat{margin-top:26px}
+.cat h2{font-family:var(--disp); font-size:13px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 12px}
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px}
+a.plat{display:flex; align-items:center; gap:11px; padding:12px 13px; border:1px solid var(--line);
+  border-radius:12px; background:var(--panel); text-decoration:none; color:var(--fg); transition:.15s; min-width:0}
+a.plat:hover{border-color:var(--faint); background:var(--panel-2)}
+a.plat .pname{font-size:14px; font-weight:600; flex:0 0 auto}
+a.plat .phandle{font-family:var(--mono); font-size:11.5px; color:var(--faint); flex:1 1 auto; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:right}
+.chip{flex:0 0 auto; font-size:11px; font-weight:700; padding:3px 8px; border-radius:7px; display:inline-flex; align-items:center; gap:5px}
+.c-wait{background:rgba(125,138,160,.14); color:var(--muted)}
+.c-ok{background:rgba(62,207,142,.15); color:var(--ok)}
+.c-no{background:rgba(242,103,107,.14); color:var(--bad)}
+.c-err{background:rgba(242,181,69,.14); color:var(--warn)}
+.c-link{background:rgba(54,214,195,.1); color:var(--accent)}
+a.plat.found{border-color:rgba(62,207,142,.45); background:rgba(62,207,142,.06)}
+a.plat.notfound{opacity:.5}
+.spin{display:inline-block; width:11px; height:11px; border:2px solid rgba(255,255,255,.25);
+  border-top-color:var(--muted); border-radius:50%; animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{color:var(--faint); font-size:14px; margin-top:22px}
+.foot{margin-top:28px; font-size:12px; color:var(--faint); line-height:1.6; border-top:1px solid var(--line); padding-top:16px}
+.foot b{color:var(--muted); font-weight:600}
+@media (max-width:460px){
+  .row-in .grow,button.go{flex:1 1 100%}
+  .grid{grid-template-columns:1fr}
+  a.plat .phandle{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a href="index.html">Verificador</a>
+    <a href="username.html" class="on">Buscar username</a>
+  </div>
+
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M5 21v-1a7 7 0 0 1 14 0v1"/></svg>
+    </span>
+    <div>
+      <h1>Buscar username</h1>
+      <div class="tag">Presença em plataformas · OSINT</div>
+    </div>
+  </div>
+  <p class="lede">Digite um apelido e veja onde ele aparece. Algumas plataformas (GitHub, GitLab, Chess.com, Lichess, Gravatar, Dev.to) são checadas na hora com ✓/✗. Nas demais, o navegador é bloqueado de checar — então eu gero o link do perfil para você abrir e confirmar. Nada é raspado nem guardado.</p>
+
+  <div class="card">
+    <form class="field" id="form" autocomplete="off">
+      <label for="in">Username / apelido</label>
+      <div class="row-in">
+        <span class="grow"><span class="at">@</span><input id="in" type="text" placeholder="ex.: john_doe" value=""></span>
+        <button class="go" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>
+          Buscar
+        </button>
+      </div>
+      <div class="hint">Procura o mesmo apelido em dezenas de redes sociais, plataformas de dev, games, mídia e fóruns.</div>
+    </form>
+  </div>
+
+  <div class="statusbar" id="statusbar"></div>
+  <div id="results"></div>
+  <div class="empty" id="empty">Digite um username acima para começar.</div>
+
+  <div class="foot">
+    <b>Uso responsável.</b> Esta ferramenta só monta endereços públicos de perfil e checa, onde a plataforma permite, se a conta existe. Ela não acessa contas, não notifica ninguém e não guarda suas buscas. Perfis diferentes podem usar o mesmo apelido — confirme a identidade antes de concluir. Use dentro da sua base legal.
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+// plataformas: {name, cat, url:(u)=>href, auto:chave?}  — auto só nas que permitem checagem via CORS
+var P = [
+  // Social
+  {n:'Instagram', c:'Social', u:function(u){return 'https://instagram.com/'+u;}},
+  {n:'X / Twitter', c:'Social', u:function(u){return 'https://x.com/'+u;}},
+  {n:'TikTok', c:'Social', u:function(u){return 'https://tiktok.com/@'+u;}},
+  {n:'Facebook', c:'Social', u:function(u){return 'https://facebook.com/'+u;}},
+  {n:'Threads', c:'Social', u:function(u){return 'https://threads.net/@'+u;}},
+  {n:'Bluesky', c:'Social', u:function(u){return 'https://bsky.app/profile/'+u;}},
+  {n:'LinkedIn', c:'Social', u:function(u){return 'https://linkedin.com/in/'+u;}},
+  {n:'Pinterest', c:'Social', u:function(u){return 'https://pinterest.com/'+u;}},
+  {n:'Snapchat', c:'Social', u:function(u){return 'https://snapchat.com/add/'+u;}},
+  {n:'Tumblr', c:'Social', u:function(u){return 'https://'+u+'.tumblr.com';}},
+  {n:'VK', c:'Social', u:function(u){return 'https://vk.com/'+u;}},
+  {n:'Telegram', c:'Social', u:function(u){return 'https://t.me/'+u;}},
+  // Desenvolvimento
+  {n:'GitHub', c:'Desenvolvimento', u:function(u){return 'https://github.com/'+u;}, auto:'github'},
+  {n:'GitLab', c:'Desenvolvimento', u:function(u){return 'https://gitlab.com/'+u;}, auto:'gitlab'},
+  {n:'Dev.to', c:'Desenvolvimento', u:function(u){return 'https://dev.to/'+u;}, auto:'devto'},
+  {n:'Bitbucket', c:'Desenvolvimento', u:function(u){return 'https://bitbucket.org/'+u+'/';}},
+  {n:'Replit', c:'Desenvolvimento', u:function(u){return 'https://replit.com/@'+u;}},
+  {n:'Hacker News', c:'Desenvolvimento', u:function(u){return 'https://news.ycombinator.com/user?id='+u;}},
+  {n:'Docker Hub', c:'Desenvolvimento', u:function(u){return 'https://hub.docker.com/u/'+u;}},
+  {n:'Kaggle', c:'Desenvolvimento', u:function(u){return 'https://kaggle.com/'+u;}},
+  {n:'Keybase', c:'Desenvolvimento', u:function(u){return 'https://keybase.io/'+u;}},
+  // Games
+  {n:'Steam', c:'Games', u:function(u){return 'https://steamcommunity.com/id/'+u;}},
+  {n:'Twitch', c:'Games', u:function(u){return 'https://twitch.tv/'+u;}},
+  {n:'Chess.com', c:'Games', u:function(u){return 'https://chess.com/member/'+u;}, auto:'chesscom'},
+  {n:'Lichess', c:'Games', u:function(u){return 'https://lichess.org/@/'+u;}, auto:'lichess'},
+  {n:'Roblox', c:'Games', u:function(u){return 'https://roblox.com/users/profile?username='+u;}},
+  {n:'Xbox', c:'Games', u:function(u){return 'https://xboxgamertag.com/search/'+u;}},
+  // Conteúdo & Mídia
+  {n:'YouTube', c:'Conteúdo & Mídia', u:function(u){return 'https://youtube.com/@'+u;}},
+  {n:'Spotify', c:'Conteúdo & Mídia', u:function(u){return 'https://open.spotify.com/user/'+u;}},
+  {n:'SoundCloud', c:'Conteúdo & Mídia', u:function(u){return 'https://soundcloud.com/'+u;}},
+  {n:'Medium', c:'Conteúdo & Mídia', u:function(u){return 'https://medium.com/@'+u;}},
+  {n:'Patreon', c:'Conteúdo & Mídia', u:function(u){return 'https://patreon.com/'+u;}},
+  {n:'Behance', c:'Conteúdo & Mídia', u:function(u){return 'https://behance.net/'+u;}},
+  {n:'Dribbble', c:'Conteúdo & Mídia', u:function(u){return 'https://dribbble.com/'+u;}},
+  {n:'Flickr', c:'Conteúdo & Mídia', u:function(u){return 'https://flickr.com/people/'+u;}},
+  {n:'DeviantArt', c:'Conteúdo & Mídia', u:function(u){return 'https://'+u+'.deviantart.com';}},
+  {n:'Vimeo', c:'Conteúdo & Mídia', u:function(u){return 'https://vimeo.com/'+u;}},
+  // Fóruns & Outros
+  {n:'Reddit', c:'Fóruns & Outros', u:function(u){return 'https://reddit.com/user/'+u;}},
+  {n:'Gravatar', c:'Fóruns & Outros', u:function(u){return 'https://gravatar.com/'+u;}, auto:'gravatar'},
+  {n:'Linktree', c:'Fóruns & Outros', u:function(u){return 'https://linktr.ee/'+u;}},
+  {n:'Product Hunt', c:'Fóruns & Outros', u:function(u){return 'https://producthunt.com/@'+u;}},
+  {n:'Pastebin', c:'Fóruns & Outros', u:function(u){return 'https://pastebin.com/u/'+u;}},
+  {n:'Wattpad', c:'Fóruns & Outros', u:function(u){return 'https://wattpad.com/user/'+u;}},
+  {n:'About.me', c:'Fóruns & Outros', u:function(u){return 'https://about.me/'+u;}}
+];
+
+var CATS = ['Social','Desenvolvimento','Games','Conteúdo & Mídia','Fóruns & Outros'];
+
+// checadores automáticos -> Promise<'found'|'notfound'|'error'>
+var CHECK = {
+  github: function(u){ return fetch('https://api.github.com/users/'+enc(u)).then(function(r){ return r.status===200?'found':(r.status===404?'notfound':'error'); }); },
+  gitlab: function(u){ return fetch('https://gitlab.com/api/v4/users?username='+enc(u)).then(function(r){ return r.json(); }).then(function(j){ return (Array.isArray(j)&&j.length>0)?'found':'notfound'; }); },
+  devto: function(u){ return fetch('https://dev.to/api/users/by_username?url='+enc(u)).then(function(r){ return r.status===200?'found':(r.status===404?'notfound':'error'); }); },
+  chesscom: function(u){ return fetch('https://api.chess.com/pub/player/'+enc(u.toLowerCase())).then(function(r){ return r.status===200?'found':(r.status===404?'notfound':'error'); }); },
+  lichess: function(u){ return fetch('https://lichess.org/api/user/'+enc(u)).then(function(r){ return r.status===200?'found':(r.status===404?'notfound':'error'); }); },
+  gravatar: function(u){ return fetch('https://gravatar.com/'+enc(u)+'.json').then(function(r){ return r.status===200?'found':(r.status===404?'notfound':'error'); }); }
+};
+
+function enc(s){ return encodeURIComponent(s); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+function run(raw){
+  var u = raw.trim().replace(/^@+/,'');
+  var results = document.getElementById('results');
+  var empty = document.getElementById('empty');
+  var sb = document.getElementById('statusbar');
+  results.innerHTML=''; empty.style.display='none';
+  if(!u){ empty.style.display='block'; empty.textContent='Digite um username acima para começar.'; sb.style.display='none'; return; }
+  if(!/^[a-zA-Z0-9._-]{1,64}$/.test(u)){
+    empty.style.display='block';
+    empty.textContent='Use apenas letras, números, ponto, hífen e sublinhado (sem espaços).';
+    sb.style.display='none'; return;
+  }
+
+  var autoCount = P.filter(function(p){return p.auto;}).length;
+  sb.style.display='flex';
+  sb.innerHTML = 'Procurando <b>@'+esc(u)+'</b> em <b>'+P.length+'</b> plataformas · '+
+    '<span class="pill p-ok">'+autoCount+' checadas na hora</span>'+
+    '<span class="pill p-manual">'+(P.length-autoCount)+' para abrir e conferir</span>';
+
+  var pendentes = [];
+  CATS.forEach(function(cat){
+    var items = P.filter(function(p){return p.c===cat;});
+    if(!items.length) return;
+    var sec = document.createElement('div'); sec.className='cat';
+    sec.innerHTML = '<h2>'+esc(cat)+'</h2>';
+    var grid = document.createElement('div'); grid.className='grid';
+    items.forEach(function(p){
+      var href = p.u(u);
+      var a = document.createElement('a');
+      a.className='plat'; a.href=href; a.target='_blank'; a.rel='noopener noreferrer';
+      var chip = p.auto
+        ? '<span class="chip c-wait"><span class="spin"></span>checando</span>'
+        : '<span class="chip c-link">abrir ↗</span>';
+      a.innerHTML = '<span class="pname">'+esc(p.n)+'</span>'+
+        '<span class="phandle">'+esc(href.replace(/^https?:\/\//,''))+'</span>'+chip;
+      grid.appendChild(a);
+      if(p.auto) pendentes.push({p:p, el:a});
+    });
+    sec.appendChild(grid);
+    results.appendChild(sec);
+  });
+
+  // dispara as checagens automáticas
+  var okCount=0, done=0;
+  pendentes.forEach(function(item){
+    var fn = CHECK[item.p.auto];
+    fn(u).then(function(res){ paint(item.el, res); if(res==='found') okCount++; })
+         .catch(function(){ paint(item.el,'error'); })
+         .then(function(){ done++; if(done===pendentes.length){
+           sb.insertAdjacentHTML('beforeend',' · <b>'+okCount+'</b> confirmada(s)'); } });
+  });
+}
+
+function paint(a, res){
+  var chip = a.querySelector('.chip');
+  if(res==='found'){ a.classList.add('found'); chip.className='chip c-ok'; chip.textContent='✓ existe'; }
+  else if(res==='notfound'){ a.classList.add('notfound'); chip.className='chip c-no'; chip.textContent='✗ não encontrado'; }
+  else { chip.className='chip c-err'; chip.textContent='checar manual'; }
+}
+
+document.getElementById('form').addEventListener('submit', function(e){
+  e.preventDefault(); run(document.getElementById('in').value);
+});
+})();
+</script>
+</body>
+</html>
