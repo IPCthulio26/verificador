@@ -84,6 +84,11 @@ button.go svg{width:16px; height:16px}
 .line .v small{display:block; color:var(--faint); font-size:12.5px; margin-top:2px}
 .grav{display:flex; align-items:center; gap:12px}
 .grav img{width:44px; height:44px; border-radius:9px; border:1px solid var(--line)}
+.copybtn{margin-left:8px; font-family:var(--sans); font-size:11.5px; font-weight:600; color:var(--accent);
+  background:rgba(54,214,195,.1); border:1px solid rgba(54,214,195,.3); border-radius:7px;
+  padding:3px 9px; cursor:pointer; vertical-align:1px; transition:.15s}
+.copybtn:hover{background:rgba(54,214,195,.2)}
+.copybtn.done{color:var(--ok); border-color:rgba(62,207,142,.4); background:rgba(62,207,142,.12)}
 .spin{display:inline-block; width:15px; height:15px; border:2px solid rgba(255,255,255,.25);
   border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
@@ -137,7 +142,7 @@ button.go svg{width:16px; height:16px}
             Verificar
           </button>
         </div>
-        <div class="hint">Checa formato, se o domínio existe e recebe e-mail (registro MX), se é provedor gratuito, descartável ou endereço institucional, e se há foto pública no Gravatar.</div>
+        <div class="hint">Checa formato, se o domínio existe e recebe e-mail (registro MX), se é provedor gratuito, descartável (lista com mais de 10 mil domínios) ou endereço institucional, e se há foto pública no Gravatar.</div>
       </form>
       <div class="results" id="res-email" hidden></div>
     </div>
@@ -152,14 +157,23 @@ button.go svg{width:16px; height:16px}
           <select id="sel-pais" aria-label="País">
             <option value="BR" selected>🇧🇷 Brasil (+55)</option>
             <option value="PT">🇵🇹 Portugal (+351)</option>
-            <option value="US">🇺🇸 EUA/Canadá (+1)</option>
+            <option value="US">🇺🇸 EUA (+1)</option>
+            <option value="CA">🇨🇦 Canadá (+1)</option>
             <option value="AR">🇦🇷 Argentina (+54)</option>
             <option value="PY">🇵🇾 Paraguai (+595)</option>
             <option value="UY">🇺🇾 Uruguai (+598)</option>
             <option value="CL">🇨🇱 Chile (+56)</option>
             <option value="CO">🇨🇴 Colômbia (+57)</option>
+            <option value="PE">🇵🇪 Peru (+51)</option>
+            <option value="BO">🇧🇴 Bolívia (+591)</option>
+            <option value="VE">🇻🇪 Venezuela (+58)</option>
+            <option value="EC">🇪🇨 Equador (+593)</option>
             <option value="MX">🇲🇽 México (+52)</option>
             <option value="ES">🇪🇸 Espanha (+34)</option>
+            <option value="FR">🇫🇷 França (+33)</option>
+            <option value="DE">🇩🇪 Alemanha (+49)</option>
+            <option value="IT">🇮🇹 Itália (+39)</option>
+            <option value="GB">🇬🇧 Reino Unido (+44)</option>
             <option value="__">Outro — digitar com +</option>
           </select>
           <span class="grow"><input id="in-fone" type="text" inputmode="tel" placeholder="(11) 98888-7823" value="11988887823"></span>
@@ -168,7 +182,7 @@ button.go svg{width:16px; height:16px}
             Verificar
           </button>
         </div>
-        <div class="hint">Diz se o número é válido e possível, o país de origem, o tipo de linha (celular ou fixo) e o número nos formatos nacional e internacional (E.164).</div>
+        <div class="hint">Diz se o número é válido e possível, o país de origem, o tipo de linha (celular, fixo, VoIP ou 0800) e o número nos formatos nacional e internacional (E.164).</div>
       </form>
       <div class="results" id="res-fone" hidden></div>
     </div>
@@ -179,14 +193,18 @@ button.go svg{width:16px; height:16px}
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/libphonenumber-js/1.11.4/libphonenumber-js.min.js"></script>
+<script src="disposable.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1.11.4/bundle/libphonenumber-max.js"></script>
 <script>
 (function(){
 "use strict";
 
 // ---------- dados de apoio ----------
 var FREE = new Set(["gmail.com","googlemail.com","hotmail.com","hotmail.com.br","outlook.com","outlook.com.br","live.com","msn.com","yahoo.com","yahoo.com.br","ymail.com","icloud.com","me.com","mac.com","proton.me","protonmail.com","pm.me","gmx.com","gmx.net","aol.com","zoho.com","bol.com.br","uol.com.br","terra.com.br","ig.com.br","globo.com","yandex.com"]);
-var DISPOSABLE = new Set(["mailinator.com","guerrillamail.com","guerrillamail.info","guerrillamailblock.com","sharklasers.com","grr.la","10minutemail.com","tempmail.com","temp-mail.org","tempmail.net","yopmail.com","throwawaymail.com","getnada.com","nada.email","trashmail.com","maildrop.cc","fakeinbox.com","fakemail.net","mailnesia.com","mintemail.com","mohmal.com","tempr.email","dispostable.com","emailondeck.com","moakt.com","spamgourmet.com","mailcatch.com","inboxkitten.com","1secmail.com","tmpmail.org","mailtemp.net","dropmail.me","20minutemail.com","burnermail.io"]);
+var DISPOSABLE = (function(){
+  try { return new Set((window.DISPOSABLE_LIST||'').split('\n').map(function(s){return s.trim();}).filter(Boolean)); }
+  catch(e){ return new Set(); }
+})();
 var ROLE = new Set(["info","contato","contact","admin","administrador","suporte","support","sac","vendas","sales","noreply","no-reply","nao-responda","naoresponda","atendimento","financeiro","comercial","marketing","postmaster","webmaster","abuse","root","hostmaster","ouvidoria","faleconosco","cadastro"]);
 
 var EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
@@ -383,7 +401,7 @@ function verificarFone(raw, pais){
   addLine(l, tipo?'ok':'neutral', 'Tipo de linha', tipo ? esc(TIPOS[tipo]||tipo) : 'Não disponível para este país');
   addLine(l,'ok','Formato internacional', '<span class="mono">'+esc(pn.formatInternational())+'</span>');
   addLine(l,'ok','Formato nacional', '<span class="mono">'+esc(pn.formatNational())+'</span>');
-  addLine(l,'ok','E.164 (padrão)', '<span class="mono">'+esc(pn.number)+'</span><small>Formato para registrar em sistemas e ofícios</small>');
+  addLine(l,'ok','E.164 (padrão)', '<span class="mono">'+esc(pn.number)+'</span><button type="button" class="copybtn" data-copy="'+esc(pn.number)+'">copiar</button><small>Formato para registrar em sistemas e ofícios</small>');
 }
 
 // ---------- abas ----------
@@ -396,6 +414,20 @@ function selTab(which){
 }
 document.getElementById('tab-email').addEventListener('click',function(){selTab('email');});
 document.getElementById('tab-fone').addEventListener('click',function(){selTab('fone');});
+
+// copiar valores (ex.: E.164)
+document.addEventListener('click', function(e){
+  var btn = e.target.closest ? e.target.closest('.copybtn') : null;
+  if(!btn) return;
+  var txt = btn.getAttribute('data-copy')||'';
+  function ok(){ var o=btn.textContent; btn.textContent='copiado'; btn.classList.add('done');
+    setTimeout(function(){ btn.textContent=o; btn.classList.remove('done'); },1400); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok).catch(function(){ fallback(txt); ok(); });
+  } else { fallback(txt); ok(); }
+  function fallback(t){ try{ var ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);}catch(_){} }
+});
 
 document.getElementById('form-email').addEventListener('submit',function(e){
   e.preventDefault(); verificarEmail(document.getElementById('in-email').value);
